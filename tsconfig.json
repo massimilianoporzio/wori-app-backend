@@ -1,14 +1,19 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "esnext",
+        "sourceMap": true,
         "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitAny": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
         "strict": true,
         "esModuleInterop": true,
         "outDir": "./dist",
-        "rootDir": "./src"
+        
     },
     "include": [
-        "src/**/*.ts"
+        "./api/*.ts"
     ],
     "exclude": [
         "node_modules"
