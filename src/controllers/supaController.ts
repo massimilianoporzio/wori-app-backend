@@ -34,7 +34,7 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 }
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response): Promise<any> => {
   //1. get username, email and password from request body
   const { username, email, password } = req.body;
 
@@ -50,8 +50,7 @@ export const register = async (req: Request, res: Response) => {
 
     // Store the user in the database
     const result = await sql`
-      INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-      [username, email, hashedPassword]`;
+      INSERT INTO users (username, email, password) VALUES (${username}, ${email}, ${hashedPassword}) RETURNING *`;
     //3 return message with user ID
     const user = result[0];
 
@@ -64,25 +63,24 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response): Promise<any> => {
   //1. get username and password from request body
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username || !password) {
+  if (!email || !password) {
     return res
       .status(400)
-      .json({ error: "Username and password are required" });
+      .json({ error: "Email and password are required" });
   }
 
   try {
     //2. check if user exists in the database (using email)
     const result = await sql`
-      "SELECT id, password FROM users WHERE username = $1",
-      [username]`
-    ;
+      SELECT * FROM users WHERE email = ${email}
+    `;
 
     if (result.length === 0) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(404).json({ error: "User not found" });
     }
 
     const user = result[0];
@@ -96,8 +94,8 @@ export const login = async (req: Request, res: Response) => {
 
     //4. generate JWT token
     // const token = "dummy_token"; // Replace with actual JWT generation logic
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: "1h",
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, {
+      expiresIn: "10h",
     });
 
     //5. return token to the client
