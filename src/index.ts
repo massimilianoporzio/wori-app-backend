@@ -1,10 +1,11 @@
 import express from "express";
 import { json } from "body-parser";
-//import autoRoute from
+import authRoute from "./routes/authRoutes";
+
 const app = express();
 app.use(json());
 
-//app.use('')
+app.use('/auth',authRoute)
 app.get("/", (req, res) => {
   console.log("test");
   res.send("yes, it works (anche da ufficio)!");

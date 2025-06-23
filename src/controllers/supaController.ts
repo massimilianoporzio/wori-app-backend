@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import pool from "../models/db";
+import sql from "../models/supaDB";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || "worisecretkey";
@@ -8,8 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET || "worisecretkey";
 export const countUsers = async (req: Request, res: Response) => {
   try {
     // Count the number of users in the database
-    const result = await pool.query("SELECT COUNT(*) FROM users");
-    const count = parseInt(result.rows[0].count, 10);   
+    const result = await sql`SELECT COUNT(*) FROM public.users`;
+    console.log("Count result:", result);
+    const count = parseInt(result[0].count, 10);   
     // Return the count of users
     res.status(200).json({ count });
   } catch (error) {
@@ -21,8 +23,8 @@ export const countUsers = async (req: Request, res: Response) => {
 export const getUsers = async (req: Request, res: Response) => {
   try {
     // Fetch all users from the database
-    const result = await pool.query("SELECT * FROM users");
-    const users = result.rows;
+    const result = await sql`SELECT * FROM users`;
+    const users = result;
 
     // Return the list of users
     res.status(200).json(users);
@@ -47,12 +49,11 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     // Store the user in the database
-    const result = await pool.query(
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-      [username, email, hashedPassword]
-    );
+    const result = await sql`
+      INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
+      [username, email, hashedPassword]`;
     //3 return message with user ID
-    const user = result.rows[0];
+    const user = result[0];
 
     res.status(201).json({ message: "User registered successfully", user });
     return;
@@ -75,16 +76,16 @@ export const login = async (req: Request, res: Response) => {
 
   try {
     //2. check if user exists in the database (using email)
-    const result = await pool.query(
+    const result = await sql`
       "SELECT id, password FROM users WHERE username = $1",
-      [username]
-    );
+      [username]`
+    ;
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    const user = result.rows[0];
+    const user = result[0];
 
     //3. compare password with hashed password in the database
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -94,10 +95,10 @@ export const login = async (req: Request, res: Response) => {
     }
 
     //4. generate JWT token
-    const token = "dummy_token"; // Replace with actual JWT generation logic
-    // const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
-    //   expiresIn: "1h",
-    // });
+    // const token = "dummy_token"; // Replace with actual JWT generation logic
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
     //5. return token to the client
     res.status(200).json({ message: "Login successful", token });

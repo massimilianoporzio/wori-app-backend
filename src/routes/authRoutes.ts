@@ -1,8 +1,11 @@
 import { Router } from "express";
-import { register } from "../controllers/authController";
+import { register, getUsers,countUsers } from "../controllers/supaController";
 
 const router = Router();
 
-export default (router: Router) => {
+
   router.post("/register", register);
-};
+  router.get("/users", getUsers);
+  router.get("/users/count", countUsers);
+
+  export default router;
